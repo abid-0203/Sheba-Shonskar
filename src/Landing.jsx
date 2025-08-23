@@ -1,8 +1,12 @@
+// This is your Landing.js component that should replace your current Landing.js file
 import React, { useState } from 'react';
 import { Search, Phone, Facebook, Youtube, Instagram, Linkedin, Twitter, User, Shield, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
 import backgroundImage from './assets/background.jpg';
+import LoginPage from './LoginPage';
 
-const ShebaShongskarLanding = () => {
+const Landing = () => {
+  const [currentPage, setCurrentPage] = useState('landing');
+  const [loginTab, setLoginTab] = useState('citizen');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
@@ -41,6 +45,31 @@ const ShebaShongskarLanding = () => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  const handleCitizenLogin = () => {
+    setLoginTab('citizen');
+    setCurrentPage('login');
+  };
+
+  const handleAdminLogin = () => {
+    setLoginTab('admin');
+    setCurrentPage('login');
+  };
+
+  const handleBackToLanding = () => {
+    setCurrentPage('landing');
+  };
+
+  // Show login page if currentPage is 'login'
+  if (currentPage === 'login') {
+    return (
+      <LoginPage 
+        initialTab={loginTab} 
+        onBack={handleBackToLanding} 
+      />
+    );
+  }
+
+  // Show landing page
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-blue-50">
       {/* Header */}
@@ -64,24 +93,30 @@ const ShebaShongskarLanding = () => {
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center space-x-3">
+            <div className="hidden md:flex items-center space-x-3">
               <button className="px-2 py-1 text-sm text-green-600 hover:bg-green-50">
                 ENG
               </button>
-              
+
               <button className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                 <Phone className="w-4 h-4" />
                 <span>Help Desk</span>
               </button>
 
-              <button className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600">
+              <button 
+                onClick={handleCitizenLogin}
+                className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
+              >
                 Citizen Login
               </button>
               
-              <button className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600">
+              <button 
+                onClick={handleAdminLogin}
+                className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
+              >
                 Admin Login
               </button>
-              
+
               <button className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                 Register
               </button>
@@ -92,7 +127,7 @@ const ShebaShongskarLanding = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <button 
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden"
             >
@@ -104,9 +139,21 @@ const ShebaShongskarLanding = () => {
           {isMenuOpen && (
             <div className="md:hidden py-4 border-t">
               <div className="flex flex-col space-y-3">
-                <button className="text-left px-4 py-2 hover:bg-gray-50">Citizen Login</button>
-                <button className="text-left px-4 py-2 hover:bg-gray-50">Admin Login</button>
-                <button className="text-left px-4 py-2 bg-green-600 text-white rounded mx-4 hover:bg-green-700">Register</button>
+                <button 
+                  onClick={handleCitizenLogin}
+                  className="text-left px-4 py-2 hover:bg-gray-50"
+                >
+                  Citizen Login
+                </button>
+                <button 
+                  onClick={handleAdminLogin}
+                  className="text-left px-4 py-2 hover:bg-gray-50"
+                >
+                  Admin Login
+                </button>
+                <button className="text-left px-4 py-2 bg-green-600 text-white rounded mx-4 hover:bg-green-700">
+                  Register
+                </button>
               </div>
             </div>
           )}
@@ -116,13 +163,12 @@ const ShebaShongskarLanding = () => {
       {/* Hero Section */}
       <main className="relative overflow-hidden ">
         <div className="absolute inset-0 z-0">
-  <img
-    src={backgroundImage}
-    alt="Bangladesh landscape"
-    className="w-full h-full object-cover"
-  />
-</div>
-
+          <img
+            src={backgroundImage}
+            alt="Bangladesh landscape"
+            className="w-full h-full object-cover"
+          />
+        </div>
 
         {/* Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -130,7 +176,7 @@ const ShebaShongskarLanding = () => {
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-8">
               Speak Up for a Better Tomorrow
             </h2>
-            
+
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto mb-6">
               <div className="flex">
@@ -204,7 +250,7 @@ const ShebaShongskarLanding = () => {
       <section className="bg-gray-50 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-2xl font-bold text-gray-800 mb-8">Need Help?</h3>
-          
+
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div className="flex items-center justify-center mb-6">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
@@ -215,7 +261,7 @@ const ShebaShongskarLanding = () => {
                 <p className="text-gray-600">For all help and information</p>
               </div>
             </div>
-            
+
             <div className="border-t pt-6">
               <div className="text-xl font-bold mb-2">333</div>
               <p className="text-gray-600 mb-4">Call government institutions for information services and assistance.</p>
@@ -275,4 +321,4 @@ const ShebaShongskarLanding = () => {
   );
 };
 
-export default ShebaShongskarLanding;
+export default Landing;
