@@ -127,6 +127,37 @@ const Landing = () => {
                 </button>
               ))}
             </div>
+
+            {/* FAQ Section */}
+            <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
+              <h3 className="text-2xl font-bold text-gray-800 text-center mb-8">
+                Frequently Asked Questions
+              </h3>
+              <div className="space-y-4">
+                {faqs.map((faq, index) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg shadow-sm bg-white"
+                  >
+                    <button
+                      onClick={() => toggleFaq(index)}
+                      className="w-full flex justify-between items-center p-4 text-left"
+                    >
+                      <span className="font-medium text-gray-800">{faq.question}</span>
+                      {openFaq === index ? (
+                        <ChevronUp className="w-5 h-5 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-500" />
+                      )}
+                    </button>
+                    {openFaq === index && (
+                      <div className="px-4 pb-4 text-gray-600">{faq.answer}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+
           </div>
         </div>
       </main>
