@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
-import logBg from './assets/log_bg.png';
+import { useNavigate } from "react-router-dom";
+import logBg from "./assets/log_bg.png";
 
 const generateCaptcha = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -9,7 +10,8 @@ const generateCaptcha = () => {
   ).join(" ");
 };
 
-const LoginPage = ({ initialTab = "citizen", onBack }) => {
+const LoginPage = ({ initialTab = "citizen" }) => {
+  const navigate = useNavigate(); // ✅ use navigate hook
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
@@ -19,13 +21,11 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
     captcha: "",
   });
 
-  // Reset form when switching Citizen/Admin
   useEffect(() => {
     setFormData({ email: "", password: "", captcha: "" });
     setCaptchaCode(generateCaptcha());
   }, [activeTab]);
 
-  // Update tab when initialTab changes
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
@@ -41,7 +41,7 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
   const handleLogin = (e) => {
     e.preventDefault();
     console.log("Login attempt:", { ...formData, userType: activeTab });
-    // Add real login logic here
+    // TODO: Add real login logic
   };
 
   return (
@@ -59,25 +59,16 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
           {/* Back Button */}
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="absolute top-4 left-4 p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="absolute top-4 left-4 p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
           {/* Logo */}
           <div className="text-center mb-8 mt-8">
-            <div className="flex items-center justify-center space-x-3 mb-2">
-              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-4 h-4 bg-red-600 rounded-full"></div>
-                </div>
-              </div>
-            </div>
             <h1 className="text-2xl font-bold">
               <span className="text-red-600">Sheba</span>
               <span className="text-green-600">Shongskar</span>
@@ -87,7 +78,6 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
             </p>
           </div>
 
-          {/* Login Title */}
           <h2 className="text-xl font-semibold text-center text-gray-800 mb-6">
             Login
           </h2>
@@ -120,7 +110,6 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
 
           {/* Form */}
           <form className="space-y-4" onSubmit={handleLogin}>
-            {/* Email */}
             <input
               type="email"
               name="email"
@@ -128,10 +117,9 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
               value={formData.email}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg"
             />
 
-            {/* Password */}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -140,12 +128,12 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors pr-12"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg pr-12"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5" />
@@ -166,8 +154,7 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
                 <button
                   type="button"
                   onClick={() => setCaptchaCode(generateCaptcha())}
-                  className="p-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                  title="Refresh Captcha"
+                  className="p-2 bg-gray-600 text-white rounded"
                 >
                   ↻
                 </button>
@@ -175,11 +162,11 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
               <input
                 type="text"
                 name="captcha"
-                placeholder="Provide the code displayed in the image"
+                placeholder="Enter the code"
                 value={formData.captcha}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
               />
             </div>
 
@@ -187,32 +174,31 @@ const LoginPage = ({ initialTab = "citizen", onBack }) => {
             <div className="flex justify-between text-sm">
               <button
                 type="button"
-                className="text-green-600 hover:text-green-700 hover:underline"
+                className="text-green-600 hover:underline"
               >
                 Forgot password?
               </button>
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={onBack}
-                  className="text-green-600 hover:text-green-700 hover:underline"
+                  onClick={() => navigate("/register")}
+                  className="text-green-600 hover:underline"
                 >
                   Register
                 </button>
                 <button
                   type="button"
-                  onClick={onBack}
-                  className="text-blue-600 hover:text-blue-700 hover:underline"
+                  onClick={() => navigate("/")}
+                  className="text-blue-600 hover:underline"
                 >
                   Back to Home
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
             >
               Login
             </button>
