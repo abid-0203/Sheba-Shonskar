@@ -1,7 +1,9 @@
+// FileName: /LoginPage.jsx
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logBg from "./assets/log_bg.png";
+import axios from 'axios'; // Import axios for HTTP requests
 
 const generateCaptcha = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -21,10 +23,12 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     password: "",
     captcha: "",
   });
+  const [loginError, setLoginError] = useState(""); // New state for login errors
 
   useEffect(() => {
     setFormData({ email: "", password: "", captcha: "" });
     setCaptchaCode(generateCaptcha());
+    setLoginError(""); // Clear error on tab change
   }, [activeTab]);
 
   useEffect(() => {
@@ -42,13 +46,14 @@ const LoginPage = ({ initialTab = "citizen" }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError(""); // Clear previous errors
 
     // Validate captcha (remove spaces for comparison)
     const enteredCaptcha = formData.captcha.replace(/\s/g, '');
     const actualCaptcha = captchaCode.replace(/\s/g, '');
     
     if (enteredCaptcha.toLowerCase() !== actualCaptcha.toLowerCase()) {
-      alert("Invalid captcha code. Please try again.");
+      setLoginError("Invalid captcha code. Please try again.");
       setCaptchaCode(generateCaptcha());
       setFormData(prev => ({ ...prev, captcha: "" }));
       setIsLoading(false);
@@ -56,28 +61,29 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     }
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await axios.post('http://localhost:5000/api/auth/login', {
+        email: formData.email,
+        password: formData.password,
+      });
       
-      console.log("Login attempt:", { ...formData, userType: activeTab });
+      // Store token and user info (e.g., in localStorage)
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user)); // Store user details
+
+      console.log("Login successful:", res.data);
       
-      // TODO: Replace this with actual login logic
-      // For demo purposes, we'll just navigate based on the user type
-      if (activeTab === "citizen") {
+      // Navigate based on user role from backend
+      if (res.data.user.role === "citizen") {
         navigate("/citizen-dashboard");
-      } else if (activeTab === "admin") {
+      } else if (res.data.user.role === "admin") {
         navigate("/admin-dashboard"); // You can create this later
       }
       
-      // In real implementation, you would:
-      // 1. Send login request to your backend
-      // 2. Handle authentication tokens
-      // 3. Store user session
-      // 4. Navigate based on user role and authentication success
-      
     } catch (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Please try again.");
+      console.error("Login error:", error.response ? error.response.data : error.message);
+      setLoginError(error.response?.data?.msg || "Login failed. Please check your credentials.");
+      setCaptchaCode(generateCaptcha()); // Refresh captcha on login failure
+      setFormData(prev => ({ ...prev, captcha: "" })); // Clear captcha input
     } finally {
       setIsLoading(false);
     }
@@ -209,6 +215,8 @@ const LoginPage = ({ initialTab = "citizen" }) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
+
+            {loginError && <p className="text-red-600 text-sm">{loginError}</p>}
 
             {/* Links */}
             <div className="flex justify-between text-sm">
