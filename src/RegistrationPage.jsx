@@ -1,5 +1,7 @@
+// FileName: /RegistrationPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios'; // Import axios for HTTP requests
 
 const RegistrationPage = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const RegistrationPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // New loading state
 
   // 🟢 Function to calculate age
   const calculateAge = (dob) => {
@@ -37,30 +40,46 @@ const RegistrationPage = () => {
     setAge(calculateAge(dob));
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => { // Make function async
     e.preventDefault();
+    setError(""); // Clear previous errors
+    setIsLoading(true); // Set loading to true
 
     if (password !== confirmPassword) {
       setError("Passwords do not match!");
+      setIsLoading(false);
       return;
     }
 
-    setError(""); // clear error
-    console.log("Registering:", {
-      firstName,
-      lastName,
-      phone,
-      altPhone,
-      email,
-      ps,
-      nid,
-      birthdate,
-      age,
-      presentAddress,
-      permanentAddress,
-      password,
-    });
-    alert("Registration form submitted!");
+    try {
+      const res = await axios.post('http://localhost:5000/api/auth/register', {
+        firstName,
+        lastName,
+        phone,
+        altPhone,
+        email,
+        ps,
+        nid,
+        birthdate,
+        age,
+        presentAddress,
+        permanentAddress,
+        password,
+      });
+
+      // Store token and user info (e.g., in localStorage)
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user)); // Store user details
+
+      alert("Registration successful! Redirecting to dashboard.");
+      navigate("/citizen-dashboard"); // Redirect to dashboard on success
+
+    } catch (err) {
+      console.error("Registration error:", err.response ? err.response.data : err.message);
+      setError(err.response?.data?.msg || "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false); // Set loading to false
+    }
   };
 
   return (
@@ -81,7 +100,7 @@ const RegistrationPage = () => {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="First Name"
-              className="w-1/2 px-4 py-2 border rounded-lg"
+              className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             />
             <input
@@ -89,7 +108,7 @@ const RegistrationPage = () => {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Last Name"
-              className="w-1/2 px-4 py-2 border rounded-lg"
+              className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             />
           </div>
@@ -100,7 +119,7 @@ const RegistrationPage = () => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="Phone"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />
 
@@ -109,7 +128,7 @@ const RegistrationPage = () => {
             value={altPhone}
             onChange={(e) => setAltPhone(e.target.value)}
             placeholder="Alternative Phone"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
 
           <input
@@ -117,7 +136,7 @@ const RegistrationPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />
 
@@ -126,8 +145,8 @@ const RegistrationPage = () => {
             type="text"
             value={ps}
             onChange={(e) => setPs(e.target.value)}
-            placeholder="P.S"
-            className="w-full px-4 py-2 border rounded-lg"
+            placeholder="P.S (Police Station)"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />
 
@@ -135,8 +154,8 @@ const RegistrationPage = () => {
             type="text"
             value={nid}
             onChange={(e) => setNid(e.target.value)}
-            placeholder="NID"
-            className="w-full px-4 py-2 border rounded-lg"
+            placeholder="NID (National ID)"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />
 
@@ -146,7 +165,7 @@ const RegistrationPage = () => {
               type="date"
               value={birthdate}
               onChange={handleBirthdateChange}
-              className="w-1/2 px-4 py-2 border rounded-lg"
+              className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             />
             <input
@@ -163,7 +182,7 @@ const RegistrationPage = () => {
             value={presentAddress}
             onChange={(e) => setPresentAddress(e.target.value)}
             placeholder="Present Address"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             rows="2"
             required
           />
@@ -172,7 +191,7 @@ const RegistrationPage = () => {
             value={permanentAddress}
             onChange={(e) => setPermanentAddress(e.target.value)}
             placeholder="Permanent Address"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             rows="2"
             required
           />
@@ -183,7 +202,7 @@ const RegistrationPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />
 
@@ -192,7 +211,7 @@ const RegistrationPage = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm Password"
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
           />
 
@@ -201,9 +220,17 @@ const RegistrationPage = () => {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            disabled={isLoading} // Disable button when loading
+            className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-green-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            Sign Up
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Registering...</span>
+              </div>
+            ) : (
+              "Sign Up"
+            )}
           </button>
         </form>
 
@@ -212,6 +239,7 @@ const RegistrationPage = () => {
           <p className="text-sm">
             Already have an account?{" "}
             <button
+              type="button" // Added type="button" to prevent form submission
               onClick={() => navigate("/login")}
               className="text-green-600 hover:underline"
             >
@@ -222,6 +250,7 @@ const RegistrationPage = () => {
 
         <div className="mt-4 text-center">
           <button
+            type="button" // Added type="button"
             onClick={() => navigate("/")}
             className="text-sm text-gray-500 hover:underline"
           >
