@@ -11,10 +11,11 @@ const generateCaptcha = () => {
 };
 
 const LoginPage = ({ initialTab = "citizen" }) => {
-  const navigate = useNavigate(); // ✅ use navigate hook
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -38,10 +39,48 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     }));
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Login attempt:", { ...formData, userType: activeTab });
-    // TODO: Add real login logic
+    setIsLoading(true);
+
+    // Validate captcha (remove spaces for comparison)
+    const enteredCaptcha = formData.captcha.replace(/\s/g, '');
+    const actualCaptcha = captchaCode.replace(/\s/g, '');
+    
+    if (enteredCaptcha.toLowerCase() !== actualCaptcha.toLowerCase()) {
+      alert("Invalid captcha code. Please try again.");
+      setCaptchaCode(generateCaptcha());
+      setFormData(prev => ({ ...prev, captcha: "" }));
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log("Login attempt:", { ...formData, userType: activeTab });
+      
+      // TODO: Replace this with actual login logic
+      // For demo purposes, we'll just navigate based on the user type
+      if (activeTab === "citizen") {
+        navigate("/citizen-dashboard");
+      } else if (activeTab === "admin") {
+        navigate("/admin-dashboard"); // You can create this later
+      }
+      
+      // In real implementation, you would:
+      // 1. Send login request to your backend
+      // 2. Handle authentication tokens
+      // 3. Store user session
+      // 4. Navigate based on user role and authentication success
+      
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -117,7 +156,7 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               value={formData.email}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
 
             <div className="relative">
@@ -128,12 +167,12 @@ const LoginPage = ({ initialTab = "citizen" }) => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg pr-12"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5" />
@@ -154,7 +193,8 @@ const LoginPage = ({ initialTab = "citizen" }) => {
                 <button
                   type="button"
                   onClick={() => setCaptchaCode(generateCaptcha())}
-                  className="p-2 bg-gray-600 text-white rounded"
+                  className="p-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  title="Refresh captcha"
                 >
                   ↻
                 </button>
@@ -162,11 +202,11 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               <input
                 type="text"
                 name="captcha"
-                placeholder="Enter the code"
+                placeholder="Enter the code (without spaces)"
                 value={formData.captcha}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
@@ -198,9 +238,17 @@ const LoginPage = ({ initialTab = "citizen" }) => {
 
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+              disabled={isLoading}
+              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
-              Login
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Logging in...</span>
+                </div>
+              ) : (
+                "Login"
+              )}
             </button>
           </form>
         </div>
