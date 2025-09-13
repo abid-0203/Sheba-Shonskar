@@ -1,9 +1,9 @@
-// FileName: /LoginPage.jsx
+// File: src/LoginPage.jsx
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logBg from "./assets/log_bg.png";
-import axios from 'axios'; // Import axios for HTTP requests
+import axios from "axios";
 
 const generateCaptcha = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -23,17 +23,13 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     password: "",
     captcha: "",
   });
-  const [loginError, setLoginError] = useState(""); // New state for login errors
+  const [loginError, setLoginError] = useState("");
 
   useEffect(() => {
     setFormData({ email: "", password: "", captcha: "" });
     setCaptchaCode(generateCaptcha());
-    setLoginError(""); // Clear error on tab change
+    setLoginError("");
   }, [activeTab]);
-
-  useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,44 +42,56 @@ const LoginPage = ({ initialTab = "citizen" }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setLoginError(""); // Clear previous errors
+    setLoginError("");
 
-    // Validate captcha (remove spaces for comparison)
-    const enteredCaptcha = formData.captcha.replace(/\s/g, '');
-    const actualCaptcha = captchaCode.replace(/\s/g, '');
-    
+    // ✅ Validate captcha
+    const enteredCaptcha = formData.captcha.replace(/\s/g, "");
+    const actualCaptcha = captchaCode.replace(/\s/g, "");
     if (enteredCaptcha.toLowerCase() !== actualCaptcha.toLowerCase()) {
       setLoginError("Invalid captcha code. Please try again.");
       setCaptchaCode(generateCaptcha());
-      setFormData(prev => ({ ...prev, captcha: "" }));
+      setFormData((prev) => ({ ...prev, captcha: "" }));
       setIsLoading(false);
       return;
     }
 
+    // ✅ TEMPORARY ADMIN LOGIN
+    if (
+      formData.email === "admin@test.com" &&
+      formData.password === "admin123"
+    ) {
+      localStorage.setItem("token", "dummy-admin-token");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ email: "admin@test.com", role: "admin" })
+      );
+      navigate("/admin-dashboard");
+      setIsLoading(false);
+      return;
+    }
+
+    // ✅ Otherwise, call your backend for citizen login
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
         email: formData.email,
         password: formData.password,
       });
-      
-      // Store token and user info (e.g., in localStorage)
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user)); // Store user details
 
-      console.log("Login successful:", res.data);
-      
-      // Navigate based on user role from backend
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       if (res.data.user.role === "citizen") {
         navigate("/citizen-dashboard");
       } else if (res.data.user.role === "admin") {
-        navigate("/admin-dashboard"); // You can create this later
+        navigate("/admin-dashboard");
       }
-      
     } catch (error) {
-      console.error("Login error:", error.response ? error.response.data : error.message);
-      setLoginError(error.response?.data?.msg || "Login failed. Please check your credentials.");
-      setCaptchaCode(generateCaptcha()); // Refresh captcha on login failure
-      setFormData(prev => ({ ...prev, captcha: "" })); // Clear captcha input
+      setLoginError(
+        error.response?.data?.msg ||
+          "Login failed. Please check your credentials."
+      );
+      setCaptchaCode(generateCaptcha());
+      setFormData((prev) => ({ ...prev, captcha: "" }));
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +120,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          {/* Logo */}
           <div className="text-center mb-8 mt-8">
             <h1 className="text-2xl font-bold">
               <span className="text-red-600">Sheba</span>
@@ -216,33 +223,9 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               />
             </div>
 
-            {loginError && <p className="text-red-600 text-sm">{loginError}</p>}
-
-            {/* Links */}
-            <div className="flex justify-between text-sm">
-              <button
-                type="button"
-                className="text-green-600 hover:underline"
-              >
-                Forgot password?
-              </button>
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/register")}
-                  className="text-green-600 hover:underline"
-                >
-                  Register
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/")}
-                  className="text-blue-600 hover:underline"
-                >
-                  Back to Home
-                </button>
-              </div>
-            </div>
+            {loginError && (
+              <p className="text-red-600 text-sm">{loginError}</p>
+            )}
 
             <button
               type="submit"
