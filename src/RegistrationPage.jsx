@@ -1,7 +1,7 @@
 // FileName: /RegistrationPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios'; // Import axios for HTTP requests
+import axios from "axios"; // Import axios for HTTP requests
 
 const RegistrationPage = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const RegistrationPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // New loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   // 🟢 Function to calculate age
   const calculateAge = (dob) => {
@@ -28,7 +28,10 @@ const RegistrationPage = () => {
     const birth = new Date(dob);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
       age--;
     }
     return age;
@@ -40,10 +43,60 @@ const RegistrationPage = () => {
     setAge(calculateAge(dob));
   };
 
-  const handleRegister = async (e) => { // Make function async
+  // Restrict birthdate to minimum 18 years ago
+  const today = new Date();
+  const minDate = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate()
+  )
+    .toISOString()
+    .split("T")[0];
+
+  const handleRegister = async (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
-    setIsLoading(true); // Set loading to true
+    setError("");
+    setIsLoading(true);
+
+    // First/Last name validation
+    if (firstName.trim() === "" || lastName.trim() === "") {
+      setError("First and Last name cannot start with space or be empty.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Phone validation (Bangladesh only: 11 digits, starts with 01)
+    const phoneRegex = /^01[0-9]{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError(
+        "Enter a valid Bangladeshi phone number (11 digits, starts with 01)."
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    // Alt phone validation (if provided)
+    if (altPhone && !phoneRegex.test(altPhone)) {
+      setError(
+        "Alternative phone must also be a valid Bangladeshi number (11 digits, starts with 01)."
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    // Email validation
+    if (!email.includes("@")) {
+      setError("Enter a valid email address.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Address validation
+    if (presentAddress.trim() === "" || permanentAddress.trim() === "") {
+      setError("Addresses cannot start with a space or be empty.");
+      setIsLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match!");
@@ -52,9 +105,9 @@ const RegistrationPage = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
-        firstName,
-        lastName,
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         phone,
         altPhone,
         email,
@@ -62,23 +115,25 @@ const RegistrationPage = () => {
         nid,
         birthdate,
         age,
-        presentAddress,
-        permanentAddress,
+        presentAddress: presentAddress.trim(),
+        permanentAddress: permanentAddress.trim(),
         password,
       });
 
-      // Store token and user info (e.g., in localStorage)
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user)); // Store user details
-
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       alert("Registration successful! Redirecting to dashboard.");
-      navigate("/citizen-dashboard"); // Redirect to dashboard on success
-
+      navigate("/citizen-dashboard");
     } catch (err) {
-      console.error("Registration error:", err.response ? err.response.data : err.message);
-      setError(err.response?.data?.msg || "Registration failed. Please try again.");
+      console.error(
+        "Registration error:",
+        err.response ? err.response.data : err.message
+      );
+      setError(
+        err.response?.data?.msg || "Registration failed. Please try again."
+      );
     } finally {
-      setIsLoading(false); // Set loading to false
+      setIsLoading(false);
     }
   };
 
@@ -86,7 +141,7 @@ const RegistrationPage = () => {
     <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
       style={{
-        backgroundImage: "url('/village.png')", // 👈 background photo
+        backgroundImage: "url('/village.png')",
       }}
     >
       <div className="w-full max-w-md bg-white bg-opacity-95 rounded-lg shadow-lg p-8 overflow-y-auto max-h-screen">
@@ -98,7 +153,9 @@ const RegistrationPage = () => {
             <input
               type="text"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) =>
+                setFirstName(e.target.value.replace(/^\s+/, ""))
+              }
               placeholder="First Name"
               className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
@@ -106,7 +163,7 @@ const RegistrationPage = () => {
             <input
               type="text"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => setLastName(e.target.value.replace(/^\s+/, ""))}
               placeholder="Last Name"
               className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
@@ -165,6 +222,7 @@ const RegistrationPage = () => {
               type="date"
               value={birthdate}
               onChange={handleBirthdateChange}
+              max={minDate} // 👈 only allow DOB at least 18 years ago
               className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             />
@@ -180,7 +238,9 @@ const RegistrationPage = () => {
           {/* Addresses */}
           <textarea
             value={presentAddress}
-            onChange={(e) => setPresentAddress(e.target.value)}
+            onChange={(e) =>
+              setPresentAddress(e.target.value.replace(/^\s+/, ""))
+            }
             placeholder="Present Address"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             rows="2"
@@ -189,7 +249,9 @@ const RegistrationPage = () => {
 
           <textarea
             value={permanentAddress}
-            onChange={(e) => setPermanentAddress(e.target.value)}
+            onChange={(e) =>
+              setPermanentAddress(e.target.value.replace(/^\s+/, ""))
+            }
             placeholder="Permanent Address"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             rows="2"
@@ -220,7 +282,7 @@ const RegistrationPage = () => {
           {/* Submit */}
           <button
             type="submit"
-            disabled={isLoading} // Disable button when loading
+            disabled={isLoading}
             className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-green-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isLoading ? (
@@ -239,7 +301,7 @@ const RegistrationPage = () => {
           <p className="text-sm">
             Already have an account?{" "}
             <button
-              type="button" // Added type="button" to prevent form submission
+              type="button"
               onClick={() => navigate("/login")}
               className="text-green-600 hover:underline"
             >
@@ -250,7 +312,7 @@ const RegistrationPage = () => {
 
         <div className="mt-4 text-center">
           <button
-            type="button" // Added type="button"
+            type="button"
             onClick={() => navigate("/")}
             className="text-sm text-gray-500 hover:underline"
           >
