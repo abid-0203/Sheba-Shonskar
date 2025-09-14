@@ -5,9 +5,7 @@
     const Post = require('../models/Post');     // Path to your Post model
     const User = require('../models/User');     // Path to your User model (for populating user info)
 
-    // @route   POST /api/posts
-    // @desc    Create a post
-    // @access  Private (requires authentication)
+    
     router.post('/', auth, async (req, res) => {
       const { text, images } = req.body; // 'images' will be an array of URLs
 
@@ -38,9 +36,7 @@
       }
     });
 
-    // @route   GET /api/posts
-    // @desc    Get all posts (timeline)
-    // @access  Private (requires authentication to view timeline)
+    
     router.get('/', auth, async (req, res) => {
       try {
         const posts = await Post.find()
