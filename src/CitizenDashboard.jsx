@@ -64,6 +64,15 @@ const CitizenDashboard = () => {
     setImagePreviews((prev) => [...prev, ...previews]); // Store URLs for display
   };
 
+  const removeImage = (index) => {
+    setPostImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      // Revoke the object URL to free memory
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const handlePost = async () => {
     if (!postText.trim() && postImages.length === 0) return;
 
@@ -75,44 +84,37 @@ const CitizenDashboard = () => {
         return;
       }
 
-      // For simplicity, we'll send image URLs directly.
-      // In a real app, you'd upload images to a cloud storage (e.g., Cloudinary, S3)
-      // and then send the returned URLs to your backend.
-      // For now, we'll just use placeholder URLs or base64 if you implement that.
-      // For this example, we'll just send the text and assume image URLs are handled elsewhere or are placeholders.
-      // If you want to implement actual image upload, that's a more complex step involving multer on backend and a storage service.
-      // For now, let's assume `postImages` are just for local preview and not actually uploaded.
-      // We'll send empty array for images to backend for now.
+      // Create FormData to send text and images
+      const formData = new FormData();
+      formData.append('text', postText);
+      
+      // Append all selected images
+      postImages.forEach((image) => {
+        formData.append('images', image);
+      });
 
-      const res = await axios.post('http://localhost:5000/api/posts', {
-        text: postText,
-        images: [], // Placeholder: In a real app, this would be uploaded image URLs
-      }, {
+      const res = await axios.post('http://localhost:5000/api/posts', formData, {
         headers: {
           'x-auth-token': token,
+          'Content-Type': 'multipart/form-data', // Important for file uploads
         },
       });
 
       // Add the new post to the beginning of the posts array
-      // We need to fetch the user's name for the new post, or get it from the stored user info
-      const user = getUser();
-      const newPost = {
-        ...res.data,
-        user: {
-          _id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        },
-      };
-      setPosts((prev) => [newPost, ...prev]);
+      setPosts((prev) => [res.data, ...prev]);
 
+      // Clear the form
       setPostText("");
       setPostImages([]);
+      // Clean up image previews
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
       setImagePreviews([]);
       setIsPostBoxOpen(false);
+      
     } catch (err) {
       console.error("Error creating post:", err.response ? err.response.data : err.message);
-      alert("Failed to create post. Please try again.");
+      const errorMsg = err.response?.data?.msg || "Failed to create post. Please try again.";
+      alert(errorMsg);
     } finally {
       setPostLoading(false);
     }
@@ -121,6 +123,8 @@ const CitizenDashboard = () => {
   const handleCancel = () => {
     setPostText("");
     setPostImages([]);
+    // Clean up image previews
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
     setImagePreviews([]);
     setIsPostBoxOpen(false);
   };
@@ -160,7 +164,7 @@ const CitizenDashboard = () => {
             className="text-gray-500 cursor-pointer p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
             onClick={() => setIsPostBoxOpen(true)}
           >
-            What’s on your mind, {userName.split(' ')[0]}? Report a problem...
+            What's on your mind, {userName.split(' ')[0]}? Report a problem...
           </div>
         ) : (
           <div>
@@ -176,12 +180,19 @@ const CitizenDashboard = () => {
             {imagePreviews.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {imagePreviews.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img}
-                    alt="preview"
-                    className="w-24 h-24 object-cover rounded border border-gray-200"
-                  />
+                  <div key={i} className="relative">
+                    <img
+                      src={img}
+                      alt="preview"
+                      className="w-24 h-24 object-cover rounded border border-gray-200"
+                    />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -256,9 +267,18 @@ const CitizenDashboard = () => {
                   {post.images.map((img, i) => (
                     <img
                       key={i}
-                      src={img}
+                      src={`http://localhost:5000${img}`} // Add your backend URL prefix
                       alt="post"
-                      className="w-32 h-20 object-cover rounded border border-gray-200"
+                      className="w-32 h-20 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80"
+                      onError={(e) => {
+                        // Handle broken images
+                        console.error(`Failed to load image: ${img}`);
+                        e.target.style.display = 'none';
+                      }}
+                      onClick={() => {
+                        // Optional: Open image in new tab for full view
+                        window.open(`http://localhost:5000${img}`, '_blank');
+                      }}
                     />
                   ))}
                 </div>
