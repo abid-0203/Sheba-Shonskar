@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Phone, Facebook, Youtube, Instagram, Linkedin, Twitter, User, Shield, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Phone, Facebook, Youtube, Instagram, Linkedin, Twitter, User, Shield, Menu, X, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Landing = () => {
@@ -28,6 +28,18 @@ const Landing = () => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  const handleChatClick = () => {
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    if (user && token) {
+      navigate('/chat');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-blue-50">
       {/* Header */}
@@ -52,6 +64,14 @@ const Landing = () => {
 
             {/* Navigation */}
             <div className="hidden md:flex items-center space-x-3">
+              <button 
+                onClick={handleChatClick}
+                className="px-4 py-2 border border-green-300 rounded text-sm hover:bg-green-50 text-green-600 flex items-center space-x-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Chat Support</span>
+              </button>
+
               <button 
                 onClick={() => navigate('/login')}
                 className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
@@ -82,6 +102,39 @@ const Landing = () => {
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
+
+          {/* Mobile Menu */}
+          {isMenuOpen && (
+            <div className="md:hidden py-4 border-t">
+              <div className="flex flex-col space-y-2">
+                <button 
+                  onClick={handleChatClick}
+                  className="px-4 py-2 border border-green-300 rounded text-sm hover:bg-green-50 text-green-600 flex items-center space-x-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Chat Support</span>
+                </button>
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
+                >
+                  Citizen Login
+                </button>
+                <button 
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
+                >
+                  Admin Login
+                </button>
+                <button 
+                  onClick={() => navigate('/register')}
+                  className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                >
+                  Register
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -161,6 +214,17 @@ const Landing = () => {
           </div>
         </div>
       </main>
+
+      {/* Floating Chat Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={handleChatClick}
+          className="w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all duration-300 hover:scale-110 flex items-center justify-center"
+          title="Chat with Support"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   );
 };

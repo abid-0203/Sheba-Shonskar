@@ -1,6 +1,6 @@
-// FileName: /CitizenDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import axios from 'axios'; // Import axios
 
 const CitizenDashboard = () => {
@@ -143,6 +143,13 @@ const CitizenDashboard = () => {
         </h1>
         <div className="space-x-4 flex items-center">
           <span className="text-gray-700 font-medium">Welcome, {userName}!</span>
+          <button 
+            onClick={() => navigate('/chat')}
+            className="text-green-600 hover:text-green-800 flex items-center space-x-1"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Chat</span>
+          </button>
           <button className="text-gray-600 hover:text-gray-800">Settings</button>
           <button
             className="text-red-600 hover:text-red-800"
@@ -160,7 +167,7 @@ const CitizenDashboard = () => {
             className="text-gray-500 cursor-pointer p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
             onClick={() => setIsPostBoxOpen(true)}
           >
-            What’s on your mind, {userName.split(' ')[0]}? Report a problem...
+            What's on your mind, {userName.split(' ')[0]}? Report a problem...
           </div>
         ) : (
           <div>
@@ -269,6 +276,17 @@ const CitizenDashboard = () => {
             </div>
           ))
         )}
+      </div>
+
+      {/* Floating Chat Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => navigate('/chat')}
+          className="w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all duration-300 hover:scale-110 flex items-center justify-center"
+          title="Chat with Admin"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );
