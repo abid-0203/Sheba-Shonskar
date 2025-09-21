@@ -39,7 +39,7 @@ const upload = multer({
 // @desc    Create a post with optional images
 // @access  Private (requires authentication)
 router.post('/', auth, upload.array('images', 5), async (req, res) => {
-  const { text } = req.body;
+  const { text, category } = req.body;
 
   try {
     // The 'auth' middleware has already verified the token and set req.user.id
@@ -48,12 +48,19 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
+    // Validate category
+    const validCategories = ['Electricity Issue', 'Gas Issue', 'Road Issue', 'Water Issue', 'Other Issue'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ msg: 'Invalid category selected' });
+    }
+
     // Get uploaded image paths
     const imagePaths = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
 
     const newPost = new Post({
       user: req.user.id, // User ID from auth middleware
       text,
+      category,
       images: imagePaths, // Store the file paths
     });
 
@@ -73,7 +80,7 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 });
 
 // @route   GET /api/posts
-// @desc    Get all posts (timeline)
+// @desc    Get all posts (timeline) - for citizens
 // @access  Private (requires authentication to view timeline)
 router.get('/', auth, async (req, res) => {
   try {
@@ -83,6 +90,77 @@ router.get('/', auth, async (req, res) => {
     res.json(posts);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET /api/posts/admin
+// @desc    Get all posts for admin with optional category filter
+// @access  Private (requires admin authentication)
+router.get('/admin', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Access denied. Admin only.' });
+    }
+
+    const { category, status } = req.query;
+    let filter = {};
+    
+    if (category && category !== 'all') {
+      filter.category = category;
+    }
+    
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    const posts = await Post.find(filter)
+      .populate('user', ['firstName', 'lastName', 'email', 'phone', 'presentAddress'])
+      .sort({ createdAt: -1 });
+    
+    res.json(posts);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT /api/posts/:id/status
+// @desc    Update post status (admin only)
+// @access  Private (requires admin authentication)
+router.put('/:id/status', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Access denied. Admin only.' });
+    }
+
+    const { status } = req.body;
+    const validStatuses = ['Pending', 'On Progress', 'Solved', 'Declined'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ msg: 'Invalid status' });
+    }
+
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('user', ['firstName', 'lastName', 'email']);
+
+    if (!post) {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+
+    res.json(post);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
     res.status(500).send('Server Error');
   }
 });
@@ -120,9 +198,9 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
 
-    // Check user ownership of the post
-    // post.user is an ObjectId, req.user.id is a string, so convert post.user to string
-    if (post.user.toString() !== req.user.id) {
+    // Check user ownership of the post or admin privilege
+    const user = await User.findById(req.user.id);
+    if (post.user.toString() !== req.user.id && user.role !== 'admin') {
       return res.status(401).json({ msg: 'User not authorized' });
     }
 

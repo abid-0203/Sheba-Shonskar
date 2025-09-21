@@ -44,7 +44,7 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     setIsLoading(true);
     setLoginError("");
 
-    // ✅ Validate captcha
+    // Validate captcha
     const enteredCaptcha = formData.captcha.replace(/\s/g, "");
     const actualCaptcha = captchaCode.replace(/\s/g, "");
     if (enteredCaptcha.toLowerCase() !== actualCaptcha.toLowerCase()) {
@@ -55,37 +55,25 @@ const LoginPage = ({ initialTab = "citizen" }) => {
       return;
     }
 
-    // ✅ TEMPORARY ADMIN LOGIN
-    if (
-      formData.email === "admin@test.com" &&
-      formData.password === "admin123"
-    ) {
-      localStorage.setItem("token", "dummy-admin-token");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ email: "admin@test.com", role: "admin" })
-      );
-      navigate("/admin-dashboard");
-      setIsLoading(false);
-      return;
-    }
-
-    // ✅ Otherwise, call your backend for citizen login
     try {
+      // Call your backend for login
       const res = await axios.post("http://localhost:5000/api/auth/login", {
         email: formData.email,
         password: formData.password,
       });
 
+      // Store token and user data
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      if (res.data.user.role === "citizen") {
-        navigate("/citizen-dashboard");
-      } else if (res.data.user.role === "admin") {
+      // Redirect based on user role
+      if (res.data.user.role === "admin") {
         navigate("/admin-dashboard");
+      } else {
+        navigate("/citizen-dashboard");
       }
     } catch (error) {
+      console.error("Login error:", error);
       setLoginError(
         error.response?.data?.msg ||
           "Login failed. Please check your credentials."
@@ -159,6 +147,16 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               Admin
             </button>
           </div>
+
+          {/* Demo Credentials Info */}
+          {activeTab === "admin" && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700 font-medium">Demo Admin Credentials:</p>
+              <p className="text-xs text-blue-600">Email: admin@sheba.com</p>
+              <p className="text-xs text-blue-600">Password: admin123</p>
+              <p className="text-xs text-blue-500 italic">Create this admin user first using the backend route!</p>
+            </div>
+          )}
 
           {/* Form */}
           <form className="space-y-4" onSubmit={handleLogin}>
