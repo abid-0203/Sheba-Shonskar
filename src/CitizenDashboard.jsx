@@ -7,12 +7,21 @@ const CitizenDashboard = () => {
   const navigate = useNavigate();
   const [isPostBoxOpen, setIsPostBoxOpen] = useState(false);
   const [postText, setPostText] = useState("");
+  const [postCategory, setPostCategory] = useState(""); // New state for category
   const [postImages, setPostImages] = useState([]); // Stores File objects for upload
   const [imagePreviews, setImagePreviews] = useState([]); // Stores URL for display
   const [posts, setPosts] = useState([]); // State to store fetched posts
   const [userName, setUserName] = useState("Citizen"); // To display logged-in user's name
   const [postLoading, setPostLoading] = useState(false); // Loading state for new post
   const [postsLoading, setPostsLoading] = useState(true); // Loading state for fetching posts
+
+  const categories = [
+    'Electricity Issue',
+    'Gas Issue', 
+    'Road Issue',
+    'Water Issue',
+    'Other Issue'
+  ];
 
   // Function to get token from localStorage
   const getToken = () => localStorage.getItem('token');
@@ -74,7 +83,15 @@ const CitizenDashboard = () => {
   };
 
   const handlePost = async () => {
-    if (!postText.trim() && postImages.length === 0) return;
+    if (!postText.trim() && postImages.length === 0) {
+      alert('Please write something or add images to your post.');
+      return;
+    }
+    
+    if (!postCategory) {
+      alert('Please select a category for your post.');
+      return;
+    }
 
     setPostLoading(true);
     try {
@@ -84,9 +101,10 @@ const CitizenDashboard = () => {
         return;
       }
 
-      // Create FormData to send text and images
+      // Create FormData to send text, category, and images
       const formData = new FormData();
       formData.append('text', postText);
+      formData.append('category', postCategory);
       
       // Append all selected images
       postImages.forEach((image) => {
@@ -105,6 +123,7 @@ const CitizenDashboard = () => {
 
       // Clear the form
       setPostText("");
+      setPostCategory("");
       setPostImages([]);
       // Clean up image previews
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
@@ -122,6 +141,7 @@ const CitizenDashboard = () => {
 
   const handleCancel = () => {
     setPostText("");
+    setPostCategory("");
     setPostImages([]);
     // Clean up image previews
     imagePreviews.forEach(url => URL.revokeObjectURL(url));
@@ -133,6 +153,28 @@ const CitizenDashboard = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
+  };
+
+  const getCategoryIcon = (category) => {
+    switch(category) {
+      case 'Electricity Issue': return '⚡';
+      case 'Gas Issue': return '🔥';
+      case 'Road Issue': return '🛣️';
+      case 'Water Issue': return '💧';
+      case 'Other Issue': return '📋';
+      default: return '📋';
+    }
+  };
+
+  const getCategoryColor = (category) => {
+    switch(category) {
+      case 'Electricity Issue': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'Gas Issue': return 'bg-red-100 text-red-700 border-red-200';
+      case 'Road Issue': return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'Water Issue': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'Other Issue': return 'bg-purple-100 text-purple-700 border-purple-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
   };
 
   return (
@@ -168,6 +210,26 @@ const CitizenDashboard = () => {
           </div>
         ) : (
           <div>
+            {/* Category Dropdown */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Category *
+              </label>
+              <select
+                value={postCategory}
+                onChange={(e) => setPostCategory(e.target.value)}
+                className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required
+              >
+                <option value="">Choose a category...</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {getCategoryIcon(category)} {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <textarea
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
@@ -212,7 +274,7 @@ const CitizenDashboard = () => {
 
               <button
                 onClick={handlePost}
-                disabled={postLoading || (!postText.trim() && postImages.length === 0)}
+                disabled={postLoading || (!postText.trim() && postImages.length === 0) || !postCategory}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-green-400 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {postLoading ? (
@@ -245,16 +307,25 @@ const CitizenDashboard = () => {
               key={post._id} // Use _id from MongoDB
               className="bg-white rounded-lg shadow p-4 border border-gray-100"
             >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-gray-800">
-                  {post.user ? `${post.user.firstName} ${post.user.lastName}` : 'Unknown User'}
-                </h3>
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-semibold text-gray-800">
+                    {post.user ? `${post.user.firstName} ${post.user.lastName}` : 'Unknown User'}
+                  </h3>
+                  {post.category && (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(post.category)} mt-1`}>
+                      {getCategoryIcon(post.category)} {post.category}
+                    </span>
+                  )}
+                </div>
                 <span
                   className={`text-sm px-2 py-1 rounded-full font-medium ${
                     post.status === "Solved"
                       ? "bg-green-100 text-green-700"
                       : post.status === "On Progress"
                       ? "bg-yellow-100 text-yellow-700"
+                      : post.status === "Declined"
+                      ? "bg-red-100 text-red-700"
                       : "bg-gray-100 text-gray-700"
                   }`}
                 >
