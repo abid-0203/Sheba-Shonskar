@@ -1,109 +1,142 @@
-    // backend/routes/posts.js
-    const express = require('express');
-    const router = express.Router();
-    const auth = require('../middleware/auth'); // Path to your auth middleware
-    const Post = require('../models/Post');     // Path to your Post model
-    const User = require('../models/User');     // Path to your User model (for populating user info)
+// backend/routes/posts.js
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const auth = require('../middleware/auth'); // Path to your auth middleware
+const Post = require('../models/Post');     // Path to your Post model
+const User = require('../models/User');     // Path to your User model
 
-    // @route   POST /api/posts
-    // @desc    Create a post
-    // @access  Private (requires authentication)
-    router.post('/', auth, async (req, res) => {
-      const { text, images } = req.body; // 'images' will be an array of URLs
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/') // Make sure this directory exists
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
+  }
+});
 
-      try {
-        // The 'auth' middleware has already verified the token and set req.user.id
-        // We can optionally fetch the user to ensure they still exist, though not strictly necessary for post creation
-        const user = await User.findById(req.user.id).select('-password'); // Select -password to not send it
-        if (!user) {
-          return res.status(404).json({ msg: 'User not found' });
-        }
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
 
-        const newPost = new Post({
-          user: req.user.id, // User ID from auth middleware
-          text,
-          images: images || [], // Ensure images is an array, even if empty
-        });
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
-        const post = await newPost.save();
+// @route   POST /api/posts
+// @desc    Create a post with optional images
+// @access  Private (requires authentication)
+router.post('/', auth, upload.array('images', 5), async (req, res) => {
+  const { text } = req.body;
 
-        // After saving, populate the user details for the response
-        // This ensures the frontend gets the user's name immediately
-        const populatedPost = await Post.findById(post._id).populate('user', ['firstName', 'lastName']);
-        res.json(populatedPost);
+  try {
+    // The 'auth' middleware has already verified the token and set req.user.id
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
 
-      } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-      }
+    // Get uploaded image paths
+    const imagePaths = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
+
+    const newPost = new Post({
+      user: req.user.id, // User ID from auth middleware
+      text,
+      images: imagePaths, // Store the file paths
     });
 
-    // @route   GET /api/posts
-    // @desc    Get all posts (timeline)
-    // @access  Private (requires authentication to view timeline)
-    router.get('/', auth, async (req, res) => {
-      try {
-        const posts = await Post.find()
-          .populate('user', ['firstName', 'lastName']) // Populate user's first and last name
-          .sort({ createdAt: -1 }); // Sort by newest first (descending order)
-        res.json(posts);
-      } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-      }
-    });
+    const post = await newPost.save();
 
-    // @route   GET /api/posts/:id
-    // @desc    Get post by ID
-    // @access  Private (requires authentication)
-    router.get('/:id', auth, async (req, res) => {
-      try {
-        const post = await Post.findById(req.params.id).populate('user', ['firstName', 'lastName']);
+    // After saving, populate the user details for the response
+    const populatedPost = await Post.findById(post._id).populate('user', ['firstName', 'lastName']);
+    res.json(populatedPost);
 
-        if (!post) {
-          return res.status(404).json({ msg: 'Post not found' });
-        }
+  } catch (err) {
+    console.error(err.message);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ msg: 'File size too large. Maximum 5MB allowed.' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
 
-        res.json(post);
-      } catch (err) {
-        console.error(err.message);
-        // Handle case where ID format is invalid (e.g., not a valid MongoDB ObjectId)
-        if (err.kind === 'ObjectId') {
-          return res.status(404).json({ msg: 'Post not found' });
-        }
-        res.status(500).send('Server Error');
-      }
-    });
+// @route   GET /api/posts
+// @desc    Get all posts (timeline)
+// @access  Private (requires authentication to view timeline)
+router.get('/', auth, async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate('user', ['firstName', 'lastName']) // Populate user's first and last name
+      .sort({ createdAt: -1 }); // Sort by newest first (descending order)
+    res.json(posts);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
-    // @route   DELETE /api/posts/:id
-    // @desc    Delete a post
-    // @access  Private (requires authentication and ownership)
-    router.delete('/:id', auth, async (req, res) => {
-      try {
-        const post = await Post.findById(req.params.id);
+// @route   GET /api/posts/:id
+// @desc    Get post by ID
+// @access  Private (requires authentication)
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('user', ['firstName', 'lastName']);
 
-        if (!post) {
-          return res.status(404).json({ msg: 'Post not found' });
-        }
+    if (!post) {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
 
-        // Check user ownership of the post
-        // post.user is an ObjectId, req.user.id is a string, so convert post.user to string
-        if (post.user.toString() !== req.user.id) {
-          return res.status(401).json({ msg: 'User not authorized' });
-        }
+    res.json(post);
+  } catch (err) {
+    console.error(err.message);
+    // Handle case where ID format is invalid (e.g., not a valid MongoDB ObjectId)
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
 
-        // Delete the post
-        await Post.deleteOne({ _id: req.params.id }); // Use deleteOne for Mongoose 6+
+// @route   DELETE /api/posts/:id
+// @desc    Delete a post
+// @access  Private (requires authentication and ownership)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
 
-        res.json({ msg: 'Post removed successfully' });
-      } catch (err) {
-        console.error(err.message);
-        if (err.kind === 'ObjectId') {
-          return res.status(404).json({ msg: 'Post not found' });
-        }
-        res.status(500).send('Server Error');
-      }
-    });
+    if (!post) {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
 
-    module.exports = router;
-    
+    // Check user ownership of the post
+    // post.user is an ObjectId, req.user.id is a string, so convert post.user to string
+    if (post.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: 'User not authorized' });
+    }
+
+    // Delete the post
+    await Post.deleteOne({ _id: req.params.id }); // Use deleteOne for Mongoose 6+
+
+    res.json({ msg: 'Post removed successfully' });
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
+
+module.exports = router;
