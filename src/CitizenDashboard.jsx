@@ -7,13 +7,13 @@ const CitizenDashboard = () => {
   const navigate = useNavigate();
   const [isPostBoxOpen, setIsPostBoxOpen] = useState(false);
   const [postText, setPostText] = useState("");
-  const [postCategory, setPostCategory] = useState(""); // New state for category
-  const [postImages, setPostImages] = useState([]); // Stores File objects for upload
-  const [imagePreviews, setImagePreviews] = useState([]); // Stores URL for display
-  const [posts, setPosts] = useState([]); // State to store fetched posts
-  const [userName, setUserName] = useState("Citizen"); // To display logged-in user's name
-  const [postLoading, setPostLoading] = useState(false); // Loading state for new post
-  const [postsLoading, setPostsLoading] = useState(true); // Loading state for fetching posts
+  const [postCategory, setPostCategory] = useState(""); // Category
+  const [postImages, setPostImages] = useState([]); // File objects
+  const [imagePreviews, setImagePreviews] = useState([]); // Display URLs
+  const [posts, setPosts] = useState([]); // Fetched posts
+  const [userName, setUserName] = useState("Citizen");
+  const [postLoading, setPostLoading] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   const categories = [
     'Electricity Issue',
@@ -23,7 +23,6 @@ const CitizenDashboard = () => {
     'Other Issue'
   ];
 
-  // Function to get token from localStorage
   const getToken = () => localStorage.getItem('token');
   const getUser = () => JSON.parse(localStorage.getItem('user'));
 
@@ -32,51 +31,41 @@ const CitizenDashboard = () => {
     if (user && user.firstName && user.lastName) {
       setUserName(`${user.firstName} ${user.lastName}`);
     } else {
-      // If no user or name, redirect to login
       navigate('/login');
     }
     fetchPosts();
-  }, []); // Run once on component mount
+  }, []);
 
   const fetchPosts = async () => {
     setPostsLoading(true);
     try {
       const token = getToken();
-      if (!token) {
-        navigate('/login');
-        return;
-      }
+      if (!token) { navigate('/login'); return; }
       const res = await axios.get('http://localhost:5000/api/posts', {
-        headers: {
-          'x-auth-token': token,
-        },
+        headers: { 'x-auth-token': token },
       });
       setPosts(res.data);
     } catch (err) {
-      console.error("Error fetching posts:", err.response ? err.response.data : err.message);
-      // Handle token expiration or invalid token
-      if (err.response && err.response.status === 401) {
+      console.error("Error fetching posts:", err.response?.data || err.message);
+      if (err.response?.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         navigate('/login');
         alert('Session expired. Please log in again.');
       }
-    } finally {
-      setPostsLoading(false);
-    }
+    } finally { setPostsLoading(false); }
   };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    setPostImages((prev) => [...prev, ...files]); // Store actual file objects
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews((prev) => [...prev, ...previews]); // Store URLs for display
+    setPostImages(prev => [...prev, ...files]);
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...previews]);
   };
 
   const removeImage = (index) => {
-    setPostImages((prev) => prev.filter((_, i) => i !== index));
-    setImagePreviews((prev) => {
-      // Revoke the object URL to free memory
+    setPostImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => {
       URL.revokeObjectURL(prev[index]);
       return prev.filter((_, i) => i !== index);
     });
@@ -84,66 +73,47 @@ const CitizenDashboard = () => {
 
   const handlePost = async () => {
     if (!postText.trim() && postImages.length === 0) {
-      alert('Please write something or add images to your post.');
+      alert('Please write something or add images.');
       return;
     }
-    
     if (!postCategory) {
-      alert('Please select a category for your post.');
+      alert('Please select a category.');
       return;
     }
 
     setPostLoading(true);
     try {
       const token = getToken();
-      if (!token) {
-        navigate('/login');
-        return;
-      }
+      if (!token) { navigate('/login'); return; }
 
-      // Create FormData to send text, category, and images
       const formData = new FormData();
       formData.append('text', postText);
       formData.append('category', postCategory);
-      
-      // Append all selected images
-      postImages.forEach((image) => {
-        formData.append('images', image);
-      });
+      postImages.forEach(img => formData.append('images', img));
 
       const res = await axios.post('http://localhost:5000/api/posts', formData, {
         headers: {
           'x-auth-token': token,
-          'Content-Type': 'multipart/form-data', // Important for file uploads
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      // Add the new post to the beginning of the posts array
-      setPosts((prev) => [res.data, ...prev]);
-
-      // Clear the form
+      setPosts(prev => [res.data, ...prev]);
       setPostText("");
       setPostCategory("");
       setPostImages([]);
-      // Clean up image previews
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
       setImagePreviews([]);
       setIsPostBoxOpen(false);
-      
+
     } catch (err) {
-      console.error("Error creating post:", err.response ? err.response.data : err.message);
-      const errorMsg = err.response?.data?.msg || "Failed to create post. Please try again.";
-      alert(errorMsg);
-    } finally {
-      setPostLoading(false);
-    }
+      console.error("Error creating post:", err.response?.data || err.message);
+      alert(err.response?.data?.msg || "Failed to create post.");
+    } finally { setPostLoading(false); }
   };
 
   const handleCancel = () => {
-    setPostText("");
-    setPostCategory("");
-    setPostImages([]);
-    // Clean up image previews
+    setPostText(""); setPostCategory(""); setPostImages([]);
     imagePreviews.forEach(url => URL.revokeObjectURL(url));
     setImagePreviews([]);
     setIsPostBoxOpen(false);
@@ -189,18 +159,8 @@ const CitizenDashboard = () => {
         </h1>
         <div className="space-x-4 flex items-center">
           <span className="text-gray-700 font-medium">Welcome, {userName}!</span>
-          <button 
-            className="text-gray-600 hover:text-gray-800"
-            onClick={() => navigate('/account')}
-          >
-            Settings
-          </button>
-          <button
-            className="text-red-600 hover:text-red-800"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+          <button className="text-gray-600 hover:text-gray-800" onClick={() => navigate('/account')}>Settings</button>
+          <button className="text-red-600 hover:text-red-800" onClick={handleLogout}>Logout</button>
         </div>
       </header>
 
@@ -215,11 +175,8 @@ const CitizenDashboard = () => {
           </div>
         ) : (
           <div>
-            {/* Category Dropdown */}
             <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Category *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Category *</label>
               <select
                 value={postCategory}
                 onChange={(e) => setPostCategory(e.target.value)}
@@ -227,7 +184,7 @@ const CitizenDashboard = () => {
                 required
               >
                 <option value="">Choose a category...</option>
-                {categories.map((category) => (
+                {categories.map(category => (
                   <option key={category} value={category}>
                     {getCategoryIcon(category)} {category}
                   </option>
@@ -251,7 +208,7 @@ const CitizenDashboard = () => {
                     <img
                       src={img}
                       alt="preview"
-                      className="w-24 h-24 object-cover rounded border border-gray-200"
+                      className="w-28 h-28 object-cover rounded border border-gray-200"
                     />
                     <button
                       onClick={() => removeImage(i)}
@@ -268,26 +225,16 @@ const CitizenDashboard = () => {
             <div className="flex items-center space-x-2">
               <label className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg cursor-pointer hover:bg-blue-200 transition-colors">
                 Add Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+                <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
               </label>
-
               <button
                 onClick={handlePost}
                 disabled={postLoading || (!postText.trim() && postImages.length === 0) || !postCategory}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-green-400 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                {postLoading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                ) : null}
+                {postLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>}
                 Post
               </button>
-
               <button
                 onClick={handleCancel}
                 disabled={postLoading}
@@ -307,11 +254,8 @@ const CitizenDashboard = () => {
         ) : posts.length === 0 ? (
           <div className="text-center text-gray-500">No posts yet. Be the first to report a problem!</div>
         ) : (
-          posts.map((post) => (
-            <div
-              key={post._id} // Use _id from MongoDB
-              className="bg-white rounded-lg shadow p-4 border border-gray-100"
-            >
+          posts.map(post => (
+            <div key={post._id} className="bg-white rounded-lg shadow p-4 border border-gray-100">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-semibold text-gray-800">
@@ -337,9 +281,10 @@ const CitizenDashboard = () => {
                   {post.status}
                 </span>
               </div>
+
               <p className="mb-3 text-gray-700">{post.text}</p>
 
-              {/* NEW: Display Admin Message if available */}
+              {/* Admin Note */}
               {post.adminMessage && (
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
                   <p className="font-semibold">Admin Note:</p>
@@ -347,27 +292,22 @@ const CitizenDashboard = () => {
                 </div>
               )}
 
+              {/* Post Images (Bigger like Admin Dashboard) */}
               {post.images && post.images.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-2">
                   {post.images.map((img, i) => (
                     <img
                       key={i}
-                      src={`http://localhost:5000${img}`} // Add your backend URL prefix
+                      src={`http://localhost:5000${img}`}
                       alt="post"
-                      className="w-32 h-20 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80"
-                      onError={(e) => {
-                        // Handle broken images
-                        console.error(`Failed to load image: ${img}`);
-                        e.target.style.display = 'none';
-                      }}
-                      onClick={() => {
-                        // Optional: Open image in new tab for full view
-                        window.open(`http://localhost:5000${img}`, '_blank');
-                      }}
+                      className="w-full h-32 sm:h-40 md:h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                      onClick={() => window.open(`http://localhost:5000${img}`, '_blank')}
                     />
                   ))}
                 </div>
               )}
+
               <p className="text-xs text-gray-500 mt-2">
                 Posted on: {new Date(post.createdAt).toLocaleString()}
               </p>
