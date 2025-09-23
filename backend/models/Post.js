@@ -24,6 +24,11 @@ const PostSchema = new mongoose.Schema({
     enum: ['Pending', 'On Progress', 'Solved', 'Declined'],
     default: 'Pending',
   },
+  // NEW: Field to store admin's message regarding status update
+  adminMessage: {
+    type: String,
+    default: '', // Default to an empty string
+  },
   createdAt: {
     type: Date,
     default: Date.now,

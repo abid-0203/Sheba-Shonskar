@@ -131,6 +131,9 @@ router.get('/admin', auth, async (req, res) => {
 // @desc    Update post status (admin only)
 // @access  Private (requires admin authentication)
 router.put('/:id/status', auth, async (req, res) => {
+  // MODIFIED: Destructure adminMessage from req.body
+  const { status, adminMessage } = req.body; 
+
   try {
     // Check if user is admin
     const user = await User.findById(req.user.id);
@@ -138,16 +141,16 @@ router.put('/:id/status', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Access denied. Admin only.' });
     }
 
-    const { status } = req.body;
     const validStatuses = ['Pending', 'On Progress', 'Solved', 'Declined'];
     
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ msg: 'Invalid status' });
     }
 
+    // Find the post and update its status and adminMessage
     const post = await Post.findByIdAndUpdate(
       req.params.id,
-      { status },
+      { status, adminMessage: adminMessage || '' }, // NEW: Update adminMessage, default to empty string if not provided
       { new: true }
     ).populate('user', ['firstName', 'lastName', 'email']);
 
