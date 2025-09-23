@@ -11,7 +11,6 @@ const AdminDashboard = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
-  // Inline admin message state
   const [currentPostToUpdate, setCurrentPostToUpdate] = useState(null);
   const [adminMessage, setAdminMessage] = useState("");
   const [newStatus, setNewStatus] = useState("");
@@ -197,12 +196,11 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          {/* Total / Pending / In Progress / Solved / Declined cards */}
-          {/* same as before ... */}
+          {/* Optional: Add your stats cards here */}
         </div>
 
         {/* Filters */}
-        {/* same as before ... */}
+        {/* Optional: Add filters UI here */}
 
         {/* Posts */}
         <div className="space-y-6">
@@ -241,6 +239,20 @@ const AdminDashboard = () => {
                   {/* Content */}
                   <p className="text-gray-700 mb-3">{post.text}</p>
 
+                  {/* Images */}
+                  {post.images && post.images.length > 0 && (
+                    <div className="mb-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {post.images.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={`http://localhost:5000${img}`} // FIX: prepend backend URL
+                          alt={`Post image ${idx + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                      ))}
+                    </div>
+                  )}
+
                   {/* Admin message */}
                   {post.adminMessage && (
                     <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
@@ -248,9 +260,6 @@ const AdminDashboard = () => {
                       <p>{post.adminMessage}</p>
                     </div>
                   )}
-
-                  {/* Images */}
-                  {/* same as before ... */}
 
                   {/* Footer */}
                   <div className="flex justify-between items-center pt-4 border-t border-gray-200">
@@ -281,7 +290,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Inline Admin Message Box (like FB comment) */}
+                  {/* Inline Admin Message Box */}
                   {currentPostToUpdate === post._id && (
                     <div className="mt-4 p-3 bg-gray-50 border rounded-lg">
                       <textarea
