@@ -1,12 +1,11 @@
+// src/Landing.jsx
 import React, { useState } from 'react';
-import { Search, Phone, Facebook, Youtube, Instagram, Linkedin, Twitter, User, Shield, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Landing = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
-
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   const serviceCategories = [
@@ -52,21 +51,21 @@ const Landing = () => {
 
             {/* Navigation */}
             <div className="hidden md:flex items-center space-x-3">
-              <button 
-                onClick={() => navigate('/login')}
+              <button
+                onClick={() => navigate('/login', { state: { initialTab: 'citizen' } })}
                 className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
               >
                 Citizen Login
               </button>
 
-              <button 
-                onClick={() => navigate('/login')}
+              <button
+                onClick={() => navigate('/login', { state: { initialTab: 'admin' } })}
                 className="px-4 py-2 border border-blue-300 rounded text-sm hover:bg-blue-50 text-blue-600"
               >
                 Admin Login
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/register')}
                 className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
               >
@@ -74,13 +73,7 @@ const Landing = () => {
               </button>
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden"
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            {/* Mobile menu button can be added here if needed */}
           </div>
         </div>
       </header>
@@ -157,7 +150,6 @@ const Landing = () => {
                 ))}
               </div>
             </section>
-
           </div>
         </div>
       </main>
