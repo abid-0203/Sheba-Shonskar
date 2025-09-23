@@ -148,7 +148,7 @@ const LoginPage = ({ initialTab = "citizen" }) => {
             </button>
           </div>
 
-          {/* Demo Credentials Info */}
+          {/* Demo Credentials Info }
           {activeTab === "admin" && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-700 font-medium">Demo Admin Credentials:</p>
@@ -156,7 +156,7 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               <p className="text-xs text-blue-600">Password: admin123</p>
               <p className="text-xs text-blue-500 italic">Create this admin user first using the backend route!</p>
             </div>
-          )}
+          )*/}
 
           {/* Form */}
           <form className="space-y-4" onSubmit={handleLogin}>

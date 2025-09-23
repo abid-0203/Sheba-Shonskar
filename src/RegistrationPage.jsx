@@ -1,7 +1,7 @@
 // FileName: /RegistrationPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios'; // Import axios for HTTP requests
+import axios from 'axios';
 
 const RegistrationPage = () => {
   const navigate = useNavigate();
@@ -19,9 +19,9 @@ const RegistrationPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // New loading state
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 🟢 Function to calculate age
+  // 🟢 Calculate Age
   const calculateAge = (dob) => {
     if (!dob) return "";
     const today = new Date();
@@ -40,10 +40,66 @@ const RegistrationPage = () => {
     setAge(calculateAge(dob));
   };
 
-  const handleRegister = async (e) => { // Make function async
+  // 🟢 Validations
+  const isValidPhone = (number) => {
+    return /^(013|014|015|016|017|018|019)\d{8}$/.test(number);
+  };
+
+  const isValidEmail = (mail) => {
+    return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(mail);
+  };
+
+  const isValidNid = (number) => {
+    return /^(\d{10}|\d{13}|\d{17})$/.test(number);
+  };
+
+  const handleRegister = async (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
-    setIsLoading(true); // Set loading to true
+    setError("");
+    setIsLoading(true);
+
+    // 🟢 Extra Checks
+    if (firstName.startsWith(" ") || lastName.startsWith(" ")) {
+      setError("Name fields cannot start with a space.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isValidPhone(phone)) {
+      setError("Phone number must be valid Bangladeshi format.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (altPhone && !isValidPhone(altPhone)) {
+      setError("Alternative phone must be valid Bangladeshi format.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Email must end with @gmail.com.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isValidNid(nid)) {
+      setError("NID must be 10, 13, or 17 digits.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (presentAddress.startsWith(" ") || permanentAddress.startsWith(" ")) {
+      setError("Address cannot start with a space.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (age < 18) {
+      setError("You must be at least 18 years old.");
+      setIsLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match!");
@@ -67,27 +123,29 @@ const RegistrationPage = () => {
         password,
       });
 
-      // Store token and user info (e.g., in localStorage)
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user)); // Store user details
+      localStorage.setItem('user', JSON.stringify(res.data.user));
 
       alert("Registration successful! Redirecting to dashboard.");
-      navigate("/citizen-dashboard"); // Redirect to dashboard on success
+      navigate("/citizen-dashboard");
 
     } catch (err) {
       console.error("Registration error:", err.response ? err.response.data : err.message);
       setError(err.response?.data?.msg || "Registration failed. Please try again.");
     } finally {
-      setIsLoading(false); // Set loading to false
+      setIsLoading(false);
     }
   };
+
+  // 🟢 Max birthdate = today - 18 years
+  const maxBirthdate = new Date();
+  maxBirthdate.setFullYear(maxBirthdate.getFullYear() - 18);
+  const maxDateString = maxBirthdate.toISOString().split("T")[0];
 
   return (
     <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
-      style={{
-        backgroundImage: "url('/village.png')", // 👈 background photo
-      }}
+      style={{ backgroundImage: "url('/village.png')" }}
     >
       <div className="w-full max-w-md bg-white bg-opacity-95 rounded-lg shadow-lg p-8 overflow-y-auto max-h-screen">
         <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
@@ -95,132 +153,169 @@ const RegistrationPage = () => {
         <form onSubmit={handleRegister} className="space-y-4">
           {/* Name */}
           <div className="flex space-x-2">
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="First Name"
-              className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Last Name"
-              className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
+            <div className="w-1/2">
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First Name"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                required
+              />
+              
+            </div>
+            <div className="w-1/2">
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last Name"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                required
+              />
+              
+            </div>
           </div>
 
           {/* Contact */}
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Phone"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <small className="text-gray-500 shadow-sm">Format: 01X######## (BD only)</small>
+          </div>
 
-          <input
-            type="tel"
-            value={altPhone}
-            onChange={(e) => setAltPhone(e.target.value)}
-            placeholder="Alternative Phone"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
+          <div>
+            <input
+              type="tel"
+              value={altPhone}
+              onChange={(e) => setAltPhone(e.target.value)}
+              placeholder="Alternative Phone"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+            <small className="text-gray-500 shadow-sm">Optional, BD only</small>
+          </div>
 
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <small className="text-gray-500 shadow-sm">Must be @gmail.com</small>
+          </div>
 
           {/* P.S & NID */}
-          <input
-            type="text"
-            value={ps}
-            onChange={(e) => setPs(e.target.value)}
-            placeholder="P.S (Police Station)"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <input
+              type="text"
+              value={ps}
+              onChange={(e) => setPs(e.target.value)}
+              placeholder="P.S (Police Station)"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <small className="text-gray-500 shadow-sm">Enter your police station</small>
+          </div>
 
-          <input
-            type="text"
-            value={nid}
-            onChange={(e) => setNid(e.target.value)}
-            placeholder="NID (National ID)"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <input
+              type="text"
+              value={nid}
+              onChange={(e) => setNid(e.target.value)}
+              placeholder="NID (National ID)"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <small className="text-gray-500 shadow-sm">10, 13, or 17 digits only</small>
+          </div>
 
           {/* Birthdate & Age */}
           <div className="flex space-x-2">
-            <input
-              type="date"
-              value={birthdate}
-              onChange={handleBirthdateChange}
-              className="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-            <input
-              type="number"
-              value={age}
-              placeholder="Age"
-              className="w-1/2 px-4 py-2 border rounded-lg bg-gray-100"
-              readOnly
-            />
+            <div className="w-1/2">
+              <input
+                type="date"
+                value={birthdate}
+                onChange={handleBirthdateChange}
+                max={maxDateString}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                required
+              />
+              <small className="text-gray-500 shadow-sm">Must be 18+ years old</small>
+            </div>
+            <div className="w-1/2">
+              <input
+                type="number"
+                value={age}
+                placeholder="Age"
+                className="w-full px-4 py-2 border rounded-lg bg-gray-100"
+                readOnly
+              />
+            </div>
           </div>
 
           {/* Addresses */}
-          <textarea
-            value={presentAddress}
-            onChange={(e) => setPresentAddress(e.target.value)}
-            placeholder="Present Address"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            rows="2"
-            required
-          />
+          <div>
+            <textarea
+              value={presentAddress}
+              onChange={(e) => setPresentAddress(e.target.value)}
+              placeholder="Present Address"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              rows="2"
+              required
+            />
+            
+          </div>
 
-          <textarea
-            value={permanentAddress}
-            onChange={(e) => setPermanentAddress(e.target.value)}
-            placeholder="Permanent Address"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            rows="2"
-            required
-          />
+          <div>
+            <textarea
+              value={permanentAddress}
+              onChange={(e) => setPermanentAddress(e.target.value)}
+              placeholder="Permanent Address"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              rows="2"
+              required
+            />
+            
+          </div>
 
           {/* Password */}
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
 
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm Password"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm Password"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={isLoading} // Disable button when loading
+            disabled={isLoading}
             className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-green-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isLoading ? (
@@ -239,7 +334,7 @@ const RegistrationPage = () => {
           <p className="text-sm">
             Already have an account?{" "}
             <button
-              type="button" // Added type="button" to prevent form submission
+              type="button"
               onClick={() => navigate("/login")}
               className="text-green-600 hover:underline"
             >
@@ -250,7 +345,7 @@ const RegistrationPage = () => {
 
         <div className="mt-4 text-center">
           <button
-            type="button" // Added type="button"
+            type="button"
             onClick={() => navigate("/")}
             className="text-sm text-gray-500 hover:underline"
           >
