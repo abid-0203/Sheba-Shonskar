@@ -1,7 +1,7 @@
-// File: src/LoginPage.jsx
+// src/LoginPage.jsx
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import logBg from "./assets/log_bg.png";
 import axios from "axios";
 
@@ -12,8 +12,11 @@ const generateCaptcha = () => {
   ).join(" ");
 };
 
-const LoginPage = ({ initialTab = "citizen" }) => {
+const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const initialTab = location.state?.initialTab || "citizen";
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
@@ -44,7 +47,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     setIsLoading(true);
     setLoginError("");
 
-    // Validate captcha
     const enteredCaptcha = formData.captcha.replace(/\s/g, "");
     const actualCaptcha = captchaCode.replace(/\s/g, "");
     if (enteredCaptcha.toLowerCase() !== actualCaptcha.toLowerCase()) {
@@ -56,17 +58,30 @@ const LoginPage = ({ initialTab = "citizen" }) => {
     }
 
     try {
-      // Call your backend for login
       const res = await axios.post("http://localhost:5000/api/auth/login", {
         email: formData.email,
         password: formData.password,
       });
 
-      // Store token and user data
+      // ** FIX: Add role validation logic **
+      const userRole = res.data.user.role;
+      const expectedRole = activeTab;
+
+      const isRoleMismatch =
+        (expectedRole === "citizen" && userRole === "admin") ||
+        (expectedRole === "admin" && userRole !== "admin");
+
+      if (isRoleMismatch) {
+        setLoginError(`The provided credentials are not for a valid '${expectedRole}' account.`);
+        setCaptchaCode(generateCaptcha());
+        setFormData((prev) => ({ ...prev, captcha: "" }));
+        setIsLoading(false);
+        return; // Stop the login process
+      }
+
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // Redirect based on user role
       if (res.data.user.role === "admin") {
         navigate("/admin-dashboard");
       } else {
@@ -87,7 +102,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background */}
       <div className="absolute inset-0 z-0">
         <img
           src={logBg}
@@ -95,11 +109,8 @@ const LoginPage = ({ initialTab = "citizen" }) => {
           className="w-full h-full object-cover"
         />
       </div>
-
-      {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-          {/* Back Button */}
           <button
             type="button"
             onClick={() => navigate("/")}
@@ -107,7 +118,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-
           <div className="text-center mb-8 mt-8">
             <h1 className="text-2xl font-bold">
               <span className="text-red-600">Sheba</span>
@@ -117,12 +127,9 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               Citizen Problem Reporting Platform
             </p>
           </div>
-
           <h2 className="text-xl font-semibold text-center text-gray-800 mb-6">
             Login
           </h2>
-
-          {/* Tabs */}
           <div className="flex mb-6">
             <button
               type="button"
@@ -147,18 +154,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               Admin
             </button>
           </div>
-
-          {/* Demo Credentials Info }
-          {activeTab === "admin" && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-700 font-medium">Demo Admin Credentials:</p>
-              <p className="text-xs text-blue-600">Email: admin@sheba.com</p>
-              <p className="text-xs text-blue-600">Password: admin123</p>
-              <p className="text-xs text-blue-500 italic">Create this admin user first using the backend route!</p>
-            </div>
-          )*/}
-
-          {/* Form */}
           <form className="space-y-4" onSubmit={handleLogin}>
             <input
               type="email"
@@ -169,7 +164,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
-
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -192,8 +186,6 @@ const LoginPage = ({ initialTab = "citizen" }) => {
                 )}
               </button>
             </div>
-
-            {/* Captcha */}
             <div className="space-y-2">
               <div className="flex items-center space-x-2 p-3 bg-gray-100 rounded-lg">
                 <div className="bg-white px-3 py-2 rounded border-2 border-dashed border-gray-300">
@@ -220,11 +212,9 @@ const LoginPage = ({ initialTab = "citizen" }) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
-
             {loginError && (
               <p className="text-red-600 text-sm">{loginError}</p>
             )}
-
             <button
               type="submit"
               disabled={isLoading}
