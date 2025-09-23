@@ -338,6 +338,15 @@ const CitizenDashboard = () => {
                 </span>
               </div>
               <p className="mb-3 text-gray-700">{post.text}</p>
+
+              {/* NEW: Display Admin Message if available */}
+              {post.adminMessage && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                  <p className="font-semibold">Admin Note:</p>
+                  <p>{post.adminMessage}</p>
+                </div>
+              )}
+
               {post.images && post.images.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {post.images.map((img, i) => (
