@@ -5,6 +5,7 @@ import LoginPage from "./LoginPage";
 import RegistrationPage from "./RegistrationPage";
 import CitizenDashboard from "./CitizenDashboard";
 import AdminDashboard from "./AdminDashboard";
+import AccountPage from "./AccountPage"; // Import the AccountPage component
 
 // Protected Route Component for Citizens
 const CitizenProtectedRoute = ({ children }) => {
@@ -65,6 +66,16 @@ function App() {
             <AdminProtectedRoute>
               <AdminDashboard />
             </AdminProtectedRoute>
+          } 
+        />
+
+        {/* NEW: Protected Account Page Route for Citizens */}
+        <Route 
+          path="/account" 
+          element={
+            <CitizenProtectedRoute>
+              <AccountPage /> {/* Render the AccountPage component */}
+            </CitizenProtectedRoute>
           } 
         />
       </Routes>

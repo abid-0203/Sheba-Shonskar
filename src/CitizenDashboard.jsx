@@ -189,7 +189,12 @@ const CitizenDashboard = () => {
         </h1>
         <div className="space-x-4 flex items-center">
           <span className="text-gray-700 font-medium">Welcome, {userName}!</span>
-          <button className="text-gray-600 hover:text-gray-800">Settings</button>
+          <button 
+            className="text-gray-600 hover:text-gray-800"
+            onClick={() => navigate('/account')}
+          >
+            Settings
+          </button>
           <button
             className="text-red-600 hover:text-red-800"
             onClick={handleLogout}
